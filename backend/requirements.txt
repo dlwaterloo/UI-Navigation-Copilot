@@ -1,0 +1,10 @@
+flask
+openai
+langchain
+google-search-results
+langchain_openai
+requests
+beautifulsoup4
+azure-ai-formrecognizer
+python-dotenv
+langchain-community
