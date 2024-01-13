@@ -12,6 +12,7 @@ sendViewportDimensions();
 
 function createBoundingBox(location) {
     const box = document.createElement('div');
+    box.style.zIndex = '10000';
     box.style.position = 'absolute';
     box.style.border = '2px solid red';
     box.style.top = location[0].y + 'px';
@@ -22,8 +23,31 @@ function createBoundingBox(location) {
     return box;
 }
 
+function removeOverlay() {
+    console.log("Removing overlays if any");
+    const overlayBox = document.getElementById('overlay-box');
+    const boundingBox = document.getElementById('bounding-box');
+
+    if (overlayBox) {
+        overlayBox.remove();
+    }
+    if (boundingBox) {
+        boundingBox.remove();
+    }
+}
+
+// Event listener handler for 'Continue' button
+function continueButtonClickHandler(stepCount) {
+    return function() {
+        console.log("Continue button clicked for step:", stepCount);
+        removeOverlay();
+        chrome.runtime.sendMessage({ action: "stepCompleted" });
+    };
+}
+
+
 function displayTutorialStep(step) {
-    console.log("Received step data:", step);
+    console.log("Displaying step:", step.step_count, step);
     removeOverlay();
 
     const overlay = document.createElement('div');
@@ -35,7 +59,7 @@ function displayTutorialStep(step) {
     overlay.style.backgroundColor = 'white';
     overlay.style.padding = '20px';
     overlay.style.border = '1px solid black';
-    overlay.style.zIndex = '10000';
+    overlay.style.zIndex = '1000000'; // Ensure this is high enough to be on top of other elements
     overlay.innerHTML = `
         <p>${step.step}</p>
         <button id='continueButton'>Continue</button>
@@ -51,38 +75,28 @@ function displayTutorialStep(step) {
     }
 
     // Set up event listener for the 'Continue' button
-    document.getElementById('continueButton').addEventListener('click', function() {
-        console.log("Continue button clicked, sending processNextStep message");
-        removeOverlay();
-        // Send message to the popup script to process the next step
-        chrome.runtime.sendMessage({ action: "stepCompleted" });
+    const continueButton = document.getElementById('continueButton');
+    
+    // Make sure to remove the event listener if it was previously added
+    continueButton.removeEventListener('click', continueButtonClickHandler(step.step_count));
+    
+    // Add the event listener with stopPropagation call
+    continueButton.addEventListener('click', function(event) {
+        event.stopPropagation(); // This will prevent the event from bubbling up to parent elements
+        continueButtonClickHandler(step.step_count)();
     });
-
-    // Notify popup.js that the step has been displayed
-    chrome.runtime.sendMessage({ action: "stepDisplayed" });
 }
 
-function removeOverlay() {
-    const overlayBox = document.getElementById('overlay-box');
-    const boundingBox = document.getElementById('bounding-box');
-
-    if (overlayBox) {
-        overlayBox.remove();
-    }
-    if (boundingBox) {
-        boundingBox.remove();
-    }
-}
-
-chrome.runtime.sendMessage({ action: "stepDisplayed" });
-
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.action === "displayStep") {
-        displayTutorialStep(request.step);
-    }
-    else if (request.action === "removeOverlay") {
+// Assuming continueButtonClickHandler is defined as before, with any necessary modifications
+function continueButtonClickHandler(stepCount) {
+    return function() {
+        console.log("Continue button clicked for step:", stepCount);
         removeOverlay();
-    }
-});
+        chrome.runtime.sendMessage({ action: "stepCompleted" });
+    };
+}
+
+
+
 
 

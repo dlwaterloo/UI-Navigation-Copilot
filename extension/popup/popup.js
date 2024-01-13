@@ -59,60 +59,61 @@ function fetchTutorial(url) {
     });
 }
 
-function processStep(step, onComplete) {
-    console.log("Processing step:", step);
-    chrome.tabs.captureVisibleTab(null, {format: 'png'}, function(dataUrl) {
-        fetch(dataUrl)
-        .then(res => res.blob())
-        .then(blob => {
-            let formData = new FormData();
-            formData.append('image', blob, 'screenshot.png');
-            formData.append('step_data', JSON.stringify(step));
-            formData.append('viewport_width', viewportWidth);
-            formData.append('viewport_height', viewportHeight);
+function processStep(step) {
+    return new Promise((resolve) => {
+        console.log("Processing step:", step);
+        chrome.tabs.captureVisibleTab(null, {format: 'png'}, function(dataUrl) {
+            // ... existing code to process image and display step ...
+            fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                let formData = new FormData();
+                formData.append('image', blob, 'screenshot.png');
+                formData.append('step_data', JSON.stringify(step));
+                formData.append('viewport_width', viewportWidth);
+                formData.append('viewport_height', viewportHeight);
 
-            fetch('http://localhost:5000/process_image', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(updatedStep => {
-                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-                    chrome.tabs.sendMessage(tabs[0].id, { action: "displayStep", step: updatedStep });
+                fetch('http://localhost:5000/process_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(updatedStep => {
+                    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                        chrome.tabs.sendMessage(tabs[0].id, { action: "displayStep", step: updatedStep });
+                        chrome.runtime.onMessage.addListener(function stepDisplayedListener(request) {
+                            if (request.action === "stepCompleted") {
+                                chrome.runtime.onMessage.removeListener(stepDisplayedListener);
+                                resolve();
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                 });
-            })
-            .catch(error => {
-                console.error('Error:', error);
             });
         });
     });
 }
 
-// Remove handleStepCompletion call from here and move it to a separate function
-document.getElementById('tutorialReadyButton').addEventListener('click', function() {
+document.getElementById('tutorialReadyButton').addEventListener('click', async function() {
     injectContentScript();
-    processStep(tutorialSteps[currentStepIndex]);
-});
-
-// New function to handle the completion of a step
-function onStepCompleted() {
-    if (currentStepIndex < tutorialSteps.length - 1) {
-        currentStepIndex++;
-        processStep(tutorialSteps[currentStepIndex]);
-    } else {
-        console.log("Tutorial completed.");
+    for (let step of tutorialSteps) {
+        await processStep(step);
     }
-}
-
+    console.log("Tutorial completed.");
+});
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === "viewportDimensions") {
         viewportWidth = request.width;
         viewportHeight = request.height;
     } else if (request.action === "stepCompleted") {
-        onStepCompleted();
+        // onStepCompleted(); // Not needed anymore since we handle it in processStep
     }
 });
+
 function injectContentScript() {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.scripting.executeScript({
@@ -121,4 +122,3 @@ function injectContentScript() {
         });
     });
 }
-

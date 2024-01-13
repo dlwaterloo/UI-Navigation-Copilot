@@ -22,6 +22,23 @@ def extract_text_from_image(image_path):
     return result
 
 
+def is_close_match(ocr_result, target):
+    """
+    Check if the ocr_result is within max_errors threshold of the target string.
+
+    :param ocr_result: The string result from OCR.
+    :param target: The target string to compare to.
+    :param max_errors: The maximum number of errors allowed (default is 1).
+    :return: True if the ocr_result is within max_errors of the target, False otherwise.
+    """
+    if len(ocr_result) != len(target):
+        return False  # Different lengths, return False immediately
+
+    errors = sum(1 for o, t in zip(ocr_result, target) if o != t)
+    return errors <= 1
+
+
+
 def find_web_element_location(step_data, ocr_results):
     """
     Find the location of the web element in the OCR results.
@@ -42,7 +59,7 @@ def find_web_element_location(step_data, ocr_results):
         for page in ocr_results.pages:
             # Check at line level
             for line in page.lines:
-                if web_element.lower() in line.content.lower():
+                if is_close_match(line.content.lower(), web_element.lower()):
                     # Web element found in line, extract the polygon
                     step["location"] = [ {"x": point.x, "y": point.y} for point in line.polygon ]
                     found = True
@@ -50,7 +67,7 @@ def find_web_element_location(step_data, ocr_results):
             # Check at word level if not found in lines
             if not found:
                 for word in page.words:
-                    if web_element.lower() in word.content.lower():
+                    if is_close_match(word.content.lower(), web_element.lower()):
                         # Web element found in word, extract the polygon
                         step["location"] = [ {"x": point.x, "y": point.y} for point in word.polygon ]
                         found = True
@@ -126,31 +143,51 @@ def update_step_data_with_matched_locations(step_data, image_path, ocr_results, 
     scale_height = viewport_height / ocr_height
     print("Scale factors:", scale_width, scale_height)
 
+    updated_steps = []  # Initialize an empty list to hold the updated steps
+
     for step in step_data:
-        web_element = step["web_element"]
-        if not web_element:
-            step["location"] = ""
-            continue
+        this = step["web_element"]
+        
+        # Initialize scaled_location for each step
+        scaled_location = []
 
         # Use OCR results to find the web element location
         location_data = find_web_element_location({"steps": [step]}, ocr_results)
         step["location"] = location_data["steps"][0]["location"]
 
-        # If the location is not found, use GPT-4 Vision to find the match
-        if not step["location"]:
-            # Formulate the query for GPT-4 Vision
-            query = f"Which element in the screenshot is likely to be '{web_element}'? Please only return the string of the web element name. If no element is likely to be '{web_element}', please return an empty string."
+        # Apply scaling to the location, regardless of how it was found
+        if step["location"]:  # Check if location exists before scaling
+            for point in step["location"]:
+                scaled_location.append({
+                    "x": point["x"] * scale_width,
+                    "y": point["y"] * scale_height
+                })
+            print("Scaled location:", scaled_location)
+            step["location"] = scaled_location
+        else:
+            # If the location is not found, use GPT-4 Vision to find the match
+            query = f"Which element in the screenshot is likely to be '{this}'? Please only return the string of the web element name. If no element is likely to be '{this}', please return an empty string."
             matched_element = gpt4_vision_extract_match(image_path, query)
             print("Matched:", matched_element)
 
             # If a matched element is found, use the OCR results to find its location
-            if matched_element and matched_element != "No match found":
-                location_data = find_web_element_location({"steps": [{"web_element": matched_element}]}, ocr_results)
-                step["location"] = location_data["steps"][0]["location"]
-            else:
-                step["location"] = ""         
+            if matched_element != "No match found":
+                location = find_web_element_location({"steps": [{"web_element": matched_element}]}, ocr_results)
+                print("OCR location:", location)
+                if location["steps"][0]["location"]:
+                    for point in location["steps"][0]["location"]:
+                        scaled_location.append({
+                            "x": point["x"] * scale_width,
+                            "y": point["y"] * scale_height
+                        })
+                    print("Scaled location for matched element:", scaled_location)
+                    step["location"] = scaled_location
 
-    return [step]
+        updated_steps.append(step)  # Add the updated step to the list
+
+    return updated_steps
+
+
 
 
 """"
