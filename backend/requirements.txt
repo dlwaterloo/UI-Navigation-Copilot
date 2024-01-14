@@ -4,7 +4,12 @@ langchain
 google-search-results
 langchain_openai
 requests
-beautifulsoup4
+beautifulsoup4==4.12.2
 azure-ai-formrecognizer
 python-dotenv
 langchain-community
+playwright==1.38.0
+uvicorn==0.23.2
+fastapi==0.103.1
+asyncio
+python-multipart

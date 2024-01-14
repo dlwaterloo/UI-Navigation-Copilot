@@ -1,18 +1,21 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 15px;
+    padding: 6px;
     color: #333;
     background-color: #f9f9f9;
-    width: 230px; /* Adjust width as needed */
+    width: 220px; /* Adjust width as needed */
 }
 
 h3 {
     color: #0a66c2;
-    margin-bottom: 20px;
+    margin-top: 3px;
+    margin-bottom: 17px;
+    font-size: 18px;
+    font-weight: bold;
 }
 
 input[type="text"] {
-    width: calc(100% - 22px); /* Full width minus padding and border */
+    width: 100%; /* Full width minus padding and border */
     padding: 10px;
     margin-bottom: 10px;
     border: 1px solid #ccc;
@@ -21,7 +24,7 @@ input[type="text"] {
 }
 
 button {
-    width: 90%;
+    width: 100%;
     padding: 10px;
     border: none;
     border-radius: 5px;

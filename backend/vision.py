@@ -32,7 +32,13 @@ def is_close_match(ocr_result, target):
     :return: True if the ocr_result is within max_errors of the target, False otherwise.
     """
     if len(ocr_result) != len(target):
-        return False  # Different lengths, return False immediately
+        ocr_result_stripped = ocr_result.replace(" ", "")
+        target_stripped = target.replace(" ", "")
+        if (target in ocr_result or ocr_result in target) and (abs((len(ocr_result_stripped) - len(target_stripped)) / len(ocr_result_stripped)) <= 0.4 or 
+                                     abs((len(ocr_result_stripped) - len(target_stripped)) / len(target_stripped)) <= 0.4):
+            return True
+        else:
+            return False
 
     errors = sum(1 for o, t in zip(ocr_result, target) if o != t)
     return errors <= 1

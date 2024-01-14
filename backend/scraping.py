@@ -2,6 +2,8 @@ import os
 import re
 import json
 import requests
+from playwright.async_api import async_playwright
+import asyncio
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from serpapi import GoogleSearch
@@ -68,34 +70,43 @@ def remove_redundant_or_irrelevant_sections(text):
     return text
 
 # Extract page content from a URL
-def extract_page_content(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-    }
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
+async def extract_page_content(url):
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        page = await browser.new_page()
+        await page.set_extra_http_headers({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        })
+        await page.goto(url, wait_until="domcontentloaded")
+        html_content = await page.content()
+        await browser.close()
 
-    html_content = response.text
-    soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, 'html.parser')
 
-    for script_or_style in soup(["script", "style"]):
-        script_or_style.extract()
+        # Remove script and style elements
+        for script_or_style in soup(["script", "style"]):
+            script_or_style.extract()
 
-    for a_tag in soup.find_all('a', href=True):
-        href = urljoin(url, a_tag['href'])
-        text = a_tag.get_text() or href
-        a_tag.replace_with(f"\nLink: [{text}]({href})\n")
+        # Extract and format hyperlinks
+        for a_tag in soup.find_all('a', href=True):
+            href = urljoin(url, a_tag['href'])
+            text = a_tag.get_text() or href  # Use href as text if no text is present
+            a_tag.replace_with(f"\nLink: [{text}]({href})\n")
 
-    for bold_tag in soup.find_all(['b', 'strong']):
-        bold_text = bold_tag.get_text()
-        bold_tag.replace_with(f"**{bold_text}**")
+        # Emphasize bold text
+        for bold_tag in soup.find_all(['b', 'strong']):
+            bold_text = bold_tag.get_text()
+            bold_tag.replace_with(f"**{bold_text}**")
 
-    text = soup.get_text()
-    lines = (line.strip() for line in text.splitlines())
-    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-    formatted_text = '\n'.join(chunk for chunk in chunks if chunk)
+        # Extract remaining text
+        text = soup.get_text()
+        lines = (line.strip() for line in text.splitlines())
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        formatted_text = '\n'.join(chunk for chunk in chunks if chunk)
 
-    return remove_redundant_or_irrelevant_sections(formatted_text)
+        formatted_text = remove_redundant_or_irrelevant_sections(formatted_text)
+
+        return formatted_text
 
 
 def GPT4_extraction():

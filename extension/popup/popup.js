@@ -10,7 +10,7 @@ document.getElementById('generateTutorialButton').addEventListener('click', func
 
     if (action && software) {
         spinner.style.display = 'block';
-        fetch('http://localhost:5000/find_website', {
+        fetch('http://localhost:8000/find_website', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -37,7 +37,7 @@ document.getElementById('generateTutorialButton').addEventListener('click', func
 });
 
 function fetchTutorial(url) {
-    fetch('http://localhost:5000/extract_content', {
+    fetch('http://localhost:8000/extract_content', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -67,13 +67,19 @@ function processStep(step) {
             fetch(dataUrl)
             .then(res => res.blob())
             .then(blob => {
+                
+                console.log("Image Blob:", blob);
+                console.log("Step Data:", step);
+                console.log("Viewport Width:", viewportWidth);
+                console.log("Viewport Height:", viewportHeight);
+
                 let formData = new FormData();
                 formData.append('image', blob, 'screenshot.png');
                 formData.append('step_data', JSON.stringify(step));
                 formData.append('viewport_width', viewportWidth);
                 formData.append('viewport_height', viewportHeight);
 
-                fetch('http://localhost:5000/process_image', {
+                fetch('http://localhost:8000/process_image', {
                     method: 'POST',
                     body: formData
                 })
