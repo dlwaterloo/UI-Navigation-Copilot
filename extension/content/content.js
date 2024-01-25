@@ -1,4 +1,4 @@
-// Send viewport dimensions to the popup script
+// Function to send viewport dimensions
 function sendViewportDimensions() {
     chrome.runtime.sendMessage({
         action: "viewportDimensions",
@@ -7,8 +7,15 @@ function sendViewportDimensions() {
     });
 }
 
-// Call this function when the script is injected
-sendViewportDimensions();
+// Call sendViewportDimensions when the DOM is fully loaded
+if (document.readyState === "complete" || document.readyState === "interactive") {
+    // DOM is already ready to go
+    sendViewportDimensions();
+} else {
+    // Wait for the DOM to be ready
+    document.addEventListener("DOMContentLoaded", sendViewportDimensions);
+}
+
 
 function createBoundingBox(location) {
     const box = document.createElement('div');
@@ -34,15 +41,6 @@ function removeOverlay() {
     if (boundingBox) {
         boundingBox.remove();
     }
-}
-
-// Event listener handler for 'Continue' button
-function continueButtonClickHandler(stepCount) {
-    return function() {
-        console.log("Continue button clicked for step:", stepCount);
-        removeOverlay();
-        chrome.runtime.sendMessage({ action: "stepCompleted" });
-    };
 }
 
 
@@ -150,6 +148,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
     // ... other conditions ...
 });
+
+
+
 
 
 

@@ -35,7 +35,7 @@ def is_close_match(ocr_result, target):
         ocr_result_stripped = ocr_result.replace(" ", "")
         target_stripped = target.replace(" ", "")
         if (target in ocr_result or ocr_result in target) and (abs((len(ocr_result_stripped) - len(target_stripped)) / len(ocr_result_stripped)) <= 0.4 or 
-                                     abs((len(ocr_result_stripped) - len(target_stripped)) / len(target_stripped)) <= 0.4):
+                                     abs((len(ocr_result_stripped) - len(target_stripped)) / len(target_stripped)) <= 0.3):
             return True
         else:
             return False
@@ -143,6 +143,8 @@ def update_step_data_with_matched_locations(step_data, image_path, ocr_results, 
     ocr_width = ocr_results.pages[0].width
     ocr_height = ocr_results.pages[0].height
     print("OCR dimensions:", ocr_width, ocr_height)
+
+    print(viewport_width, viewport_height)
 
     # Then, calculate scale factors
     scale_width = viewport_width / ocr_width

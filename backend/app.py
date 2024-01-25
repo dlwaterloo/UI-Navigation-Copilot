@@ -16,14 +16,6 @@ load_dotenv()
 
 app = FastAPI()
 
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request, exc):
-    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request, exc):
-    return JSONResponse({"detail": exc.errors()}, status_code=422)
-
 # Configure CORS
 origins = [
     "http://localhost:3000",  # React app (if running on localhost:3000)
