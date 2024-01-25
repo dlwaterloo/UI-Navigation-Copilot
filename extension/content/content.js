@@ -150,6 +150,21 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 
+// Function to continue tutorial from saved state
+function continueSavedTutorial() {
+    chrome.storage.local.get(['tutorialSteps', 'currentStepIndex'], function(data) {
+        if (data.tutorialSteps && data.currentStepIndex != null) {
+            tutorialSteps = data.tutorialSteps;
+            currentStepIndex = data.currentStepIndex;
+            displayTutorialStep(tutorialSteps[currentStepIndex]);
+        }
+    });
+}
+
+// Call this function when the content script is loaded
+continueSavedTutorial();
+
+
 
 
 

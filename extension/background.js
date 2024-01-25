@@ -5,6 +5,11 @@ let viewportHeight = 0;
 
 let viewportDimensionsReceived = false;
 
+// Function to save the tutorial state
+function saveTutorialState() {
+    chrome.storage.local.set({ tutorialSteps, currentStepIndex });
+}
+
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === "viewportDimensions") {
         viewportWidth = request.width;
@@ -13,13 +18,16 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     } else if (request.action === "initiateTutorial") {
         tutorialSteps = request.steps;
         currentStepIndex = 0;
+        saveTutorialState(); // Save state when tutorial is initiated
         processStep(tutorialSteps[currentStepIndex]);
     } else if (request.action === "stepCompleted") {
         currentStepIndex++;
         if (currentStepIndex < tutorialSteps.length) {
+            saveTutorialState(); // Save state on each step completion
             processStep(tutorialSteps[currentStepIndex]);
         }
     } 
+    // ... other conditions if any ...
 });
 
 function waitForViewportDimensions() {
@@ -73,3 +81,23 @@ function processStep(step) {
     });
 }
 
+
+
+// This function injects the content script into the active tab
+function injectContentScript() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        if (tabs[0] && tabs[0].id) {
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                files: ['content/content.js']
+            });
+        }
+    });
+}
+
+// Listen for tabs being updated (like page reloads or new navigations)
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab.active) {
+        injectContentScript(); // Inject content script into the newly loaded page
+    }
+});
