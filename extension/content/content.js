@@ -145,6 +145,8 @@ function continueButtonClickHandler(stepCount) {
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if(request.action === "displayStep") {
         displayTutorialStep(request.step);
+    } else if(request.action === "endTutorial") {
+        removeOverlay();
     }
     // ... other conditions ...
 });
@@ -156,10 +158,17 @@ function continueSavedTutorial() {
         if (data.tutorialSteps && data.currentStepIndex != null) {
             tutorialSteps = data.tutorialSteps;
             currentStepIndex = data.currentStepIndex;
-            displayTutorialStep(tutorialSteps[currentStepIndex]);
+
+            if (currentStepIndex < tutorialSteps.length) {
+                displayTutorialStep(tutorialSteps[currentStepIndex]);
+            } else {
+                // Tutorial has ended, possibly hide the overlay or clean up
+                removeOverlay(); // Make sure you have a function to remove the overlay
+            }
         }
     });
 }
+
 
 // Call this function when the content script is loaded
 continueSavedTutorial();

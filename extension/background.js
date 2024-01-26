@@ -23,10 +23,16 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     } else if (request.action === "stepCompleted") {
         currentStepIndex++;
         if (currentStepIndex < tutorialSteps.length) {
-            saveTutorialState(); // Save state on each step completion
             processStep(tutorialSteps[currentStepIndex]);
+        } else {
+            // Tutorial ended, clear tutorial data and notify content script
+            chrome.storage.local.remove(['tutorialSteps', 'currentStepIndex'], function() {
+                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    chrome.tabs.sendMessage(tabs[0].id, { action: "endTutorial" });
+                });
+            });
         }
-    } 
+    }
     // ... other conditions if any ...
 });
 
