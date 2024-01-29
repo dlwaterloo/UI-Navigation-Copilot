@@ -26,12 +26,9 @@ def is_close_match(ocr_result, target):
     """
     Check if the ocr_result is within max_errors threshold of the target string.
 
-    :param ocr_result: The string result from OCR.
-    :param target: The target string to compare to.
-    :param max_errors: The maximum number of errors allowed (default is 1).
-    :return: True if the ocr_result is within max_errors of the target, False otherwise.
+    Needs to be improved potentiallly (Davidliu007 vs Davidluu007)
     """
-    if len(ocr_result) != len(target):
+    if len(ocr_result) != len(target): 
         ocr_result_stripped = ocr_result.replace(" ", "")
         target_stripped = target.replace(" ", "")
         if (target in ocr_result or ocr_result in target) and (abs((len(ocr_result_stripped) - len(target_stripped)) / len(ocr_result_stripped)) <= 0.4 or 

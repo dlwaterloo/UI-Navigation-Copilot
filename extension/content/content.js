@@ -34,12 +34,16 @@ function removeOverlay() {
     console.log("Removing overlays if any");
     const overlayBox = document.getElementById('overlay-box');
     const boundingBox = document.getElementById('bounding-box');
+    const domBoundingBox = document.getElementById('dom-bounding-box');
 
     if (overlayBox) {
         overlayBox.remove();
     }
     if (boundingBox) {
         boundingBox.remove();
+    }
+    if (domBoundingBox) {
+        domBoundingBox.remove();
     }
 }
 
@@ -63,12 +67,20 @@ function displayTutorialStep(step) {
     // Append overlay to document to calculate dimensions
     document.body.appendChild(overlay);
 
-    // If there is a location for the step, create a bounding box
     let boundingBox;
-    if (step.location && step.location.length > 0) {
-        console.log("Creating bounding box with location:", step.location);
+    if (step.useFallback && step.location && step.location.length > 0) {
+        // Use coordinate-based bounding box for fallback
         boundingBox = createBoundingBox(step.location);
         boundingBox.id = 'bounding-box';
+    } else if (!step.useFallback && tryFindAndHighlightElement(step)) {
+        // Use DOM bounding box if not using fallback
+        let xpath = `//*[text()='${step["web_element"]}']`;
+        let results = document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null);
+        let element = results.iterateNext();
+        if (element) {
+            boundingBox = createDOMBoundingBox(element);
+            boundingBox.id = 'dom-bounding-box';
+        }
     }
 
     // Calculate overlay position based on bounding box and viewport
@@ -147,9 +159,46 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         displayTutorialStep(request.step);
     } else if(request.action === "endTutorial") {
         removeOverlay();
+    } else if(request.action === "findElementInDOM") {
+        const found = tryFindAndHighlightElement(request.step);
+        sendResponse({ found: found });
     }
     // ... other conditions ...
 });
+
+
+
+
+function createDOMBoundingBox(element) {
+    const boundingBox = document.createElement('div');
+    boundingBox.id = 'dom-bounding-box';
+    boundingBox.style.position = 'absolute';
+    boundingBox.style.border = '2px solid red';
+    boundingBox.style.zIndex = '1000000';
+
+    const rect = element.getBoundingClientRect();
+    boundingBox.style.width = `${rect.width}px`;
+    boundingBox.style.height = `${rect.height}px`;
+    boundingBox.style.top = `${rect.top + window.scrollY}px`;
+    boundingBox.style.left = `${rect.left + window.scrollX}px`;
+
+    document.body.appendChild(boundingBox);
+    return boundingBox
+}
+
+
+
+function tryFindAndHighlightElement(step) {
+    let xpath = `//*[text()='${step["web_element"]}']`;
+    let results = document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null);
+    let element = results.iterateNext();
+  
+    if (element) {
+        createDOMBoundingBox(element);
+        return true;
+    }
+    return false;
+}
 
 
 // Function to continue tutorial from saved state

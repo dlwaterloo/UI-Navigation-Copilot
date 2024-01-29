@@ -49,44 +49,61 @@ function waitForViewportDimensions() {
     });
 }
 
-function processStep(step) {
-    waitForViewportDimensions().then(() => {
-        console.log("Processing step:", step);
-        chrome.tabs.captureVisibleTab(null, {format: 'png'}, function(dataUrl) {
-            // ... existing code to process image and display step ...
-            fetch(dataUrl)
-            .then(res => res.blob())
-            .then(blob => {
-                
-                console.log("Image Blob:", blob);
-                console.log("Step Data:", step);
-                console.log("Viewport Width:", viewportWidth);
-                console.log("Viewport Height:", viewportHeight);
 
-                let formData = new FormData();
-                formData.append('image', blob, 'screenshot.png');
-                formData.append('step_data', JSON.stringify(step));
-                formData.append('viewport_width', viewportWidth);
-                formData.append('viewport_height', viewportHeight);
-
-                fetch('http://localhost:8000/process_image', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(updatedStep => {
-                    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-                        chrome.tabs.sendMessage(tabs[0].id, { action: "displayStep", step: updatedStep });
-                    });
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+function tryFindingElementInDOM(step) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+            chrome.tabs.sendMessage(tabs[0].id, { action: "findElementInDOM", step: step }, response => {
+                if (response && response.found) {
+                    resolve(true); // Element found in DOM
+                } else {
+                    resolve(false); // Element not found, proceed with image processing
+                }
             });
         });
     });
 }
 
+
+function processStep(step) {
+    waitForViewportDimensions().then(() => {
+        tryFindingElementInDOM(step).then(foundInDOM => {
+            if (!foundInDOM) {
+                chrome.tabs.captureVisibleTab(null, {format: 'png'}, function(dataUrl) {
+                    fetch(dataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        let formData = new FormData();
+                        formData.append('image', blob, 'screenshot.png');
+                        formData.append('step_data', JSON.stringify(step));
+                        formData.append('viewport_width', viewportWidth);
+                        formData.append('viewport_height', viewportHeight);
+
+                        fetch('http://localhost:8000/process_image', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(updatedStep => {
+                            updatedStep.useFallback = true;
+                            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                                chrome.tabs.sendMessage(tabs[0].id, { action: "displayStep", step: updatedStep });
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                    });
+                });
+            } else {
+                step.useFallback = false;
+                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    chrome.tabs.sendMessage(tabs[0].id, { action: "displayStep", step: step });
+                });
+            }
+        });
+    });
+}
 
 
 // This function injects the content script into the active tab
