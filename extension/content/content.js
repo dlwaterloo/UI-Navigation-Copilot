@@ -194,7 +194,6 @@ function tryFindAndHighlightElement(step) {
     let element = results.iterateNext();
   
     if (element) {
-        createDOMBoundingBox(element);
         return true;
     }
     return false;
