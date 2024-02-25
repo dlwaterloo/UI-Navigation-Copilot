@@ -224,6 +224,111 @@ continueSavedTutorial();
 
 
 
+function createChatBox() {
+    // Check if chatbox already exists
+    if (document.getElementById('chatbox-container')) return;
+
+    // Chatbox Container
+    const chatboxContainer = document.createElement('div');
+    chatboxContainer.id = 'chatbox-container';
+    chatboxContainer.style.position = 'fixed';
+    chatboxContainer.style.bottom = '20px';
+    chatboxContainer.style.right = '20px';
+    chatboxContainer.style.width = '300px';
+    chatboxContainer.style.height = '450px';
+    chatboxContainer.style.backgroundColor = '#f1f1f1';
+    chatboxContainer.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+    chatboxContainer.style.borderRadius = '8px';
+    chatboxContainer.style.display = 'flex';
+    chatboxContainer.style.flexDirection = 'column';
+    chatboxContainer.style.zIndex = '99999';
+
+    // Chatbox Header
+    const chatboxHeader = document.createElement('div');
+    chatboxHeader.style.padding = '10px';
+    chatboxHeader.style.backgroundColor = '#007bff';
+    chatboxHeader.style.color = '#ffffff';
+    chatboxHeader.style.textAlign = 'center';
+    chatboxHeader.style.borderTopLeftRadius = '8px';
+    chatboxHeader.style.borderTopRightRadius = '8px';
+    chatboxHeader.innerHTML = 'AI Chatbox';
+    chatboxContainer.appendChild(chatboxHeader);
+
+    // Chatbox Messages
+    const chatboxMessages = document.createElement('div');
+    chatboxMessages.id = 'chatbox-messages';
+    chatboxMessages.style.flexGrow = '1';
+    chatboxMessages.style.overflowY = 'auto';
+    chatboxMessages.style.padding = '10px';
+    chatboxContainer.appendChild(chatboxMessages);
+
+    // Chatbox Input
+    const chatboxInputContainer = document.createElement('div');
+    chatboxInputContainer.style.padding = '10px';
+    const chatboxInput = document.createElement('input');
+    chatboxInput.type = 'text';
+    chatboxInput.style.width = '97%';
+    chatboxInput.style.padding = '10px';
+    chatboxInput.style.borderRadius = '4px';
+    chatboxInput.style.border = '1px solid #ccc';
+    chatboxInputContainer.appendChild(chatboxInput);
+    chatboxContainer.appendChild(chatboxInputContainer);
+
+    // Send Message on Enter
+    chatboxInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && chatboxInput.value.trim() !== '') {
+            const userMessage = document.createElement('div');
+            userMessage.style.textAlign = 'right';
+            userMessage.innerHTML = `<div style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 5px 10px; border-radius: 4px; margin-top: 5px;">${chatboxInput.value}</div>`;
+            chatboxMessages.appendChild(userMessage);
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+
+            // Here you can add the code to send the message to the backend and get a response
+            // For demonstration, we'll just echo the message
+            const responseMessage = document.createElement('div');
+            responseMessage.style.textAlign = 'left';
+            responseMessage.innerHTML = `<div style="display: inline-block; background-color: #f1f1f1; color: #333; padding: 5px 10px; border-radius: 4px; margin-top: 5px;">Echo: ${chatboxInput.value}</div>`;
+            chatboxMessages.appendChild(responseMessage);
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+
+            chatboxInput.value = ''; // Clear input
+        }
+    });
+
+
+    // Pause/Continue Button
+    const pauseContinueBtn = document.createElement('button');
+    pauseContinueBtn.innerText = 'Pause'; // Initial text
+    pauseContinueBtn.style.padding = '10px';
+    pauseContinueBtn.style.width = '100%';
+    pauseContinueBtn.style.border = 'none';
+    pauseContinueBtn.style.backgroundColor = '#007bff';
+    pauseContinueBtn.style.color = 'white';
+    pauseContinueBtn.style.borderBottomLeftRadius = '8px';
+    pauseContinueBtn.style.borderBottomRightRadius = '8px';
+
+    pauseContinueBtn.addEventListener('click', function() {
+        const chatboxInput = document.getElementById('chatbox-input'); // Ensure this ID is set for the chatbox input element
+        if (pauseContinueBtn.innerText === 'Pause') {
+            chatboxInput.disabled = true; // Disable input
+            pauseContinueBtn.innerText = 'Continue';
+        } else {
+            chatboxInput.disabled = false; // Enable input
+            pauseContinueBtn.innerText = 'Pause';
+        }
+    });
+
+    // Add the pause/continue button to the container
+    chatboxContainer.appendChild(pauseContinueBtn);
+
+    document.body.appendChild(chatboxContainer);
+}
+
+
+createChatBox(); // This will create and display the chatbox
+
+
+
 
 
 
