@@ -7,7 +7,7 @@ document.getElementById('generateTutorialButton').addEventListener('click', func
 
     if (action && software) {
         spinner.style.display = 'inline-block';
-        statusText.textContent = 'Finding UserDoc...';
+        statusText.textContent = 'Finding User Doc...';
         fetch('http://localhost:8000/find_website', {
             method: 'POST',
             headers: {
