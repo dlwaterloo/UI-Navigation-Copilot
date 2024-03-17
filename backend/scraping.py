@@ -36,7 +36,7 @@ def find_relevant_website(action, software):
         You are a smart assistant. Analyze these search results dictionary and determine the most relevant website url based on the user's query.
         Respond in the following JSON format:
         ```
-        {{"most_relevant_link": "link_here", "reason": "explanation_here"}}
+        {{"most_relevant_link": "link_here", "title": "title_here", "reason": "explanation_here"}}
         ```
         Everything between the ``` must be valid JSON.
         """
@@ -54,7 +54,7 @@ def find_relevant_website(action, software):
 
     response_content = response.content.strip('`')
     response_data = json.loads(response_content)
-    return response_data.get("most_relevant_link")
+    return response_data
 
 
 # Remove redundant or irrelevant sections from text

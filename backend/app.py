@@ -38,9 +38,14 @@ async def find_website(data: dict):
     action = data['action']
     software = data['software']
     
-    relevant_link = find_relevant_website(action, software)  # Make sure find_relevant_website is an async function
-    if relevant_link:
-        return {"url": relevant_link}
+    relevant_data = find_relevant_website(action, software)  # This function now returns more than just a link
+    if relevant_data and relevant_data.get("most_relevant_link"):
+        # Return the full relevant data including URL, title, and reason
+        return {
+            "url": relevant_data.get("most_relevant_link"),
+            "title": relevant_data.get("title"),
+            "reason": relevant_data.get("reason")
+        }
     else:
         raise HTTPException(status_code=404, detail="No relevant link found")
 

@@ -325,7 +325,7 @@ function createChatBox() {
 }
 
 
-createChatBox(); // This will create and display the chatbox
+// createChatBox(); // This will create and display the chatbox
 
 
 
